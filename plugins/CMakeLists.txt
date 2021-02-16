@@ -35,12 +35,18 @@ include_directories(
   ${PROJECT_SOURCE_DIR}
 )
 
-# needed for SimpleTrackedVehiclePlugin
+# needed for SimpleTrackedVehiclePlugin + ROSSimpleTrackedVehiclePlugin
+find_package(roscpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 include_directories(SYSTEM
   ${Boost_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}/deps/opende/include
   ${CMAKE_SOURCE_DIR}/deps/threadpool
   ${CMAKE_SOURCE_DIR}/deps/opende/src
+  ${roscpp_INCLUDE_DIRS}
+  ${std_msgs_INCLUDE_DIRS}
+  ${geometry_msgs_INCLUDE_DIRS}
 )
 
 # Tinyxml are used since the plugins are linking against gazebo_common
@@ -120,6 +126,7 @@ set (plugins_single_header
   RayPlugin
   RaySensorNoisePlugin
   ReflectancePlugin
+  ROSSimpleTrackedVehiclePlugin
   RubblePlugin
   ShaderParamVisualPlugin
   SimpleTrackedVehiclePlugin
@@ -173,6 +180,16 @@ target_link_libraries(TrackedVehiclePlugin
 install (TARGETS TrackedVehiclePlugin DESTINATION ${GAZEBO_PLUGIN_INSTALL_DIR})
 gz_install_includes("plugins" TrackedVehiclePlugin.hh)
 
+add_library(ROSTrackedVehiclePlugin SHARED ROSTrackedVehiclePlugin.cc)
+target_link_libraries(ROSTrackedVehiclePlugin
+        libgazebo
+        ${ogre_libraries}
+        ${IGNITION-TRANSPORT_LIBRARIES}
+        ${roscpp_LIBRARIES}
+        )
+install (TARGETS ROSTrackedVehiclePlugin DESTINATION ${GAZEBO_PLUGIN_INSTALL_DIR})
+gz_install_includes("plugins" ROSTrackedVehiclePlugin.hh)
+
 foreach (src ${plugins_single_header})
   add_library(${src} SHARED ${src}.cc)
   target_link_libraries(${src}
@@ -188,6 +205,11 @@ target_include_directories(SimpleTrackedVehiclePlugin SYSTEM PRIVATE
         ${CMAKE_SOURCE_DIR}/deps/opende/include)
 target_link_libraries(SimpleTrackedVehiclePlugin TrackedVehiclePlugin)
 add_dependencies(SimpleTrackedVehiclePlugin TrackedVehiclePlugin)
+
+target_include_directories(ROSSimpleTrackedVehiclePlugin SYSTEM PRIVATE
+        ${CMAKE_SOURCE_DIR}/deps/opende/include)
+target_link_libraries(ROSSimpleTrackedVehiclePlugin ROSTrackedVehiclePlugin)
+add_dependencies(ROSSimpleTrackedVehiclePlugin ROSTrackedVehiclePlugin)
 
 target_link_libraries(WheelTrackedVehiclePlugin TrackedVehiclePlugin)
 add_dependencies(WheelTrackedVehiclePlugin TrackedVehiclePlugin)
